@@ -1,102 +1,123 @@
 import { GetStaticProps } from "next"
-import { chromium } from "playwright"
 import { useEffect, useState } from "react"
+import wordListPath from "word-list"
+import { readFileSync } from "fs"
+import Image from "next/image"
 
 type Props = {
   words: string[]
   errors?: any
 }
 
-type Letter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' |
-              'G' | 'H' | 'I' | 'J' | 'K' | 'L' |
-              'M' | 'N' | 'O' | 'P' | 'Q' | 'R' |
-              'S' | 'T' | 'U' | 'V' | 'W' | 'X' |
-              'Y' | 'Z'
+type Index = 0 | 1 | 2 | 3 | 4
 
-enum HitBlowState {
-  Hit, Blow, None
+type Letter = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' |
+              'g' | 'h' | 'i' | 'j' | 'k' | 'l' |
+              'm' | 'n' | 'o' | 'p' | 'q' | 'r' |
+              's' | 't' | 'u' | 'v' | 'w' | 'x' |
+              'y' | 'z'
+
+enum Evaluation {
+  Absent,
+  Present,
+  Correct
 }
 
+type EvaluationLetter = 'x' | 'o' | '!'
+
 type Input = {
-  index: 0 | 1 | 2 | 3 | 4
+  index: Index
   letter: Letter
-  state: HitBlowState
+  evaluation: Evaluation
 }
 
 const Words = ({ words, errors }: Props) => {
   const [inputs, setInputs] = useState<Input[]>([])
-  const [fulfill, setFulfill] = useState<string[]>([])
+  const [candidates, setCandidates] = useState<string[]>([])
+
+  const input = (letter: Letter, index: Index, evaluation: Evaluation) => ({
+    index, letter, evaluation
+  })
+
+  const word = (word: string, evaluations: string) =>
+    _word(word.split("").map(letter),
+          evaluations.split("").map(evaluationLetter).map(evaluation))
+
+  const _word = (word: Letter[], evaluates: Evaluation[]) =>
+    word.map((l, i) => input(l, (i as Index), evaluates[i]))
+
+  const letter = (str: string) => {
+    if(!str.match(/^[a-z]$/)) throw Error(`letter should be one length character, but given [${str}]`)
+    return str as Letter
+  }
+
+  const evaluationLetter = (str: string) => {
+    if(!str.match(/^[xo!]$/)) throw Error(`evaluation should be x or o or !, but given [${str}]`)
+    return str as EvaluationLetter
+  }
+
+  const evaluation = (evaluationLetter: EvaluationLetter) => {
+    switch(evaluationLetter) {
+      case "x": return Evaluation.Absent
+      case "o": return Evaluation.Present
+      case "!": return Evaluation.Correct
+    }
+  }
 
   useEffect(() => {
-    setInputs([
-      {
-        index: 0,
-        letter: 'I',
-        state: HitBlowState.None,
-      },
-      {
-        index: 1,
-        letter: 'N',
-        state: HitBlowState.None,
-      },
-      {
-        index: 2,
-        letter: 'P',
-        state: HitBlowState.None,
-      },
-      {
-        index: 3,
-        letter: 'U',
-        state: HitBlowState.Blow,
-      },
-      {
-        index: 4,
-        letter: 'T',
-        state: HitBlowState.None,
-      },
-      {
-        index: 0,
-        letter: 'F',
-        state: HitBlowState.None,
-      },
-      {
-        index: 1,
-        letter: 'R',
-        state: HitBlowState.Blow,
-      },
-      {
-        index: 2,
-        letter: 'A',
-        state: HitBlowState.None,
-      },
-      {
-        index: 3,
-        letter: 'M',
-        state: HitBlowState.Blow,
-      },
-      {
-        index: 4,
-        letter: 'E',
-        state: HitBlowState.None,
-      },
-    ])
+    try {
+      setInputs([
+        ...word("input", "xxoox"),
+        ...word("frame", "xxox!"),
+      ])
+    } catch (error) {
+      console.error(error)
+    }
   }, [])
 
-  useEffect(() => {
-    const filtered = inputs.map(input =>
-      input.state === HitBlowState.None ? (word: string) => !word.includes(input.letter.toLowerCase()) :
-      input.state === HitBlowState.Hit ? (word: string) => word[input.index] === input.letter.toLowerCase() :
-      (word: string) => word.includes(input.letter.toLowerCase()) && word[input.index] !== input.letter.toLowerCase()
-    ).reduce((accm, fn) => accm.filter(fn), words)
+  type Predicate = (word: string) => boolean
 
-    setFulfill(filtered)
-  }, [inputs])
+  // From entered letter to filter predicate.
+  const predicate = ({ evaluation, letter, index }: Input): Predicate => {
+    switch(evaluation) {
+      case Evaluation.Correct:
+        return word => word[index] === letter
+      case Evaluation.Present:
+        return word => word.includes(letter) && word[index] !== letter
+      case Evaluation.Absent:
+        return word => !word.includes(letter)
+    }
+  }
+  
+  useEffect(
+    () => setCandidates(inputs.map(predicate).reduce((accm, p) => accm.filter(p), words)),
+    [inputs]
+  )
+
+  const [source, setSource] = useState("")
+  useEffect(() => {
+    if(source.split(/\n/).some(line => line.length !== 11)) {
+      return
+    }
+
+    try {
+      const inputs = source.split(/\n/).map(line => {
+        const [w, e] = line.split(/\s+/)
+        return word(w, e)
+      }).flat()
+      setInputs(inputs)
+    } catch (error) {
+      console.error(error)
+    }
+  }, [source])
 
   return <>
     <div>
+      <textarea style={{width:'20rem', height:'10rem'}} value={source} onChange={e => setSource(e.target.value)}></textarea>
+      <Image src="/syntax.png" alt="syntax" width={400} height={454} />
     </div>
     <ul>
-      {fulfill.map((word) => (
+      {candidates.map((word) => (
         <li key={word}>{word}</li>
       ))}
 
@@ -110,15 +131,16 @@ export default Words
 
 export const getStaticProps: GetStaticProps = async () => {
   try {
-    const browser = await chromium.launch()
-    const select = () => Array.from(document.querySelectorAll('.word-block ul li')).map(li => li.textContent)
-    const words = await Promise.all('abcdefghijklmnopqrstuvwxyz'.split('').map(letter => 
-      browser.newPage().then(page =>
-        page.goto(`https://www.wordmom.com/5-letter-words/that-start-with-${letter}`)
-            .then(() => page.evaluate(select))
-      )
-    )).then(wordses => wordses.flat())
-    browser.close()
+    const words = readFileSync(wordListPath, 'utf8').split("\n").filter(word => word.length === 5)
+    // const browser = await chromium.launch()
+    // const select = () => Array.from(document.querySelectorAll('.word-block ul li')).map(li => li.textContent)
+    // const words = await Promise.all('abcdefghijklmnopqrstuvwxyz'.split('').map(letter => 
+    //   browser.newPage().then(page =>
+    //     page.goto(`https://www.wordmom.com/5-letter-words/that-start-with-${letter}`)
+    //         .then(() => page.evaluate(select))
+    //   )
+    // )).then(wordses => wordses.flat())
+    // browser.close()
     
     return { props: { words } }
   } catch (err: any) {
