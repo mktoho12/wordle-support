@@ -1,5 +1,5 @@
 import { GetStaticProps } from "next"
-import * as puppeteer from "puppeteer"
+import { chromium } from "playwright"
 
 type Props = {
   words: string[]
@@ -20,7 +20,7 @@ export default Words
 
 export const getStaticProps: GetStaticProps = async () => {
   try {
-    const browser = await puppeteer.launch()
+    const browser = await chromium.launch()
     const select = () => Array.from(document.querySelectorAll('.word-block ul li')).map(li => li.textContent)
     const words = await Promise.all('abcdefghijklmnopqrstuvwxyz'.split('').map(letter => 
       browser.newPage().then(page =>
