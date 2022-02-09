@@ -19,7 +19,7 @@ export const getStaticProps: GetStaticProps = async () => {
   try {
     const browser = await puppeteer.launch()
     const select = () => Array.from(document.querySelectorAll('.word-block ul li')).map(li => li.textContent)
-    const words = await Promise.all('abcdefghijklmnopqrstuvwxyz'.split('').map(letter => 
+    const words = await Promise.all('a'.split('').map(letter => 
       browser.newPage().then(page =>
         page.goto(`https://www.wordmom.com/5-letter-words/that-start-with-${letter}`)
             .then(() =>
