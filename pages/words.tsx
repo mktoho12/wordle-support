@@ -1,70 +1,65 @@
 import { GetStaticProps } from "next"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import wordListPath from "word-list"
 import { readFileSync } from "fs"
+import GameRow from "../components/GameRow"
+import { Evaluation, Index, Input, Letter, Predicate } from "../index.d"
 import Image from "next/image"
 
-type Props = {
+export type Props = {
   words: string[]
   errors?: any
-}
-
-type Index = 0 | 1 | 2 | 3 | 4
-
-type Letter = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' |
-              'g' | 'h' | 'i' | 'j' | 'k' | 'l' |
-              'm' | 'n' | 'o' | 'p' | 'q' | 'r' |
-              's' | 't' | 'u' | 'v' | 'w' | 'x' |
-              'y' | 'z'
-
-enum Evaluation {
-  Absent,
-  Present,
-  Correct
-}
-
-type EvaluationLetter = 'x' | 'o' | '!'
-
-type Input = {
-  index: Index
-  letter: Letter
-  evaluation: Evaluation
 }
 
 const Words = ({ words, errors }: Props) => {
   const [inputs, setInputs] = useState<Input[]>([])
   const [candidates, setCandidates] = useState<string[]>([])
 
-  const input = (letter: Letter, index: Index, evaluation: Evaluation) => ({
-    index, letter, evaluation
-  })
-
-  const word = (word: string, evaluations: string) =>
-    _word(word.split("").map(letter),
-          evaluations.split("").map(evaluationLetter).map(evaluation))
-
-  const _word = (word: Letter[], evaluates: Evaluation[]) =>
-    word.map((l, i) => input(l, (i as Index), evaluates[i]))
-
-  const letter = (str: string) => {
-    if(!str.match(/^[a-z]$/)) throw Error(`letter should be one length character, but given [${str}]`)
-    return str as Letter
-  }
-
-  const evaluationLetter = (str: string) => {
-    if(!str.match(/^[xo!]$/)) throw Error(`evaluation should be x or o or !, but given [${str}]`)
-    return str as EvaluationLetter
-  }
-
-  const evaluation = (evaluationLetter: EvaluationLetter) => {
-    switch(evaluationLetter) {
-      case "x": return Evaluation.Absent
-      case "o": return Evaluation.Present
-      case "!": return Evaluation.Correct
+  const nextEvalution = (ev: Evaluation) => {
+    switch(ev) {
+      case Evaluation.Absent: return Evaluation.Present
+      case Evaluation.Present: return Evaluation.Correct
+      case Evaluation.Correct: return Evaluation.Absent
     }
   }
 
-  type Predicate = (word: string) => boolean
+  const input = (letter: Letter, index: Index, evaluation: Evaluation, wordIndex: number) => ({
+    index,
+    letter,
+    evaluation,
+    wordIndex,
+    toggle: () => setInputs(prev => {
+      const r = [...prev]
+      const totalIndex = wordIndex * 5 + index
+      r[totalIndex] = Object.assign(prev[totalIndex], { evaluation: nextEvalution(prev[totalIndex].evaluation) })
+      return r
+    })
+  })
+
+  // const word = (word: string, evaluations: string) =>
+  //   _word(word.split("").map(letter),
+  //         evaluations.split("").map(evaluationLetter).map(evaluation))
+
+  // const _word = (word: Letter[], evaluates: Evaluation[]) =>
+  //   word.map((l, i) => input(l, (i as Index), evaluates[i]))
+
+  // const letter = (str: string) => {
+  //   if(!str.match(/^[a-z]$/)) throw Error(`letter should be one length character, but given [${str}]`)
+  //   return str as Letter
+  // }
+
+  // const evaluationLetter = (str: string) => {
+  //   if(!str.match(/^[xo!]$/)) throw Error(`evaluation should be x or o or !, but given [${str}]`)
+  //   return str as EvaluationLetter
+  // }
+
+  // const evaluation = (evaluationLetter: EvaluationLetter) => {
+  //   switch(evaluationLetter) {
+  //     case "x": return Evaluation.Absent
+  //     case "o": return Evaluation.Present
+  //     case "!": return Evaluation.Correct
+  //   }
+  // }
 
   // From entered letter to filter predicate.
   const predicate = ({ evaluation, letter, index }: Input): Predicate => {
@@ -75,6 +70,8 @@ const Words = ({ words, errors }: Props) => {
         return word => word.includes(letter) && word[index] !== letter
       case Evaluation.Absent:
         return word => !word.includes(letter)
+      default:
+        return _ => false
     }
   }
   
@@ -83,36 +80,84 @@ const Words = ({ words, errors }: Props) => {
     [inputs]
   )
 
-  const [source, setSource] = useState("")
-  useEffect(() => {
-    if(source.split(/\n/).some(line => line.length !== 11)) {
+  // const [source, setSource] = useState("")
+  // useEffect(() => {
+  //   if(source.split(/\n/).some(line => line.length !== 11)) {
+  //     return
+  //   }
+
+  //   try {
+  //     const inputs = source.split(/\n/).map(line => {
+  //       const [w, e] = line.split(/\s+/)
+  //       return word(w, e)
+  //     }).flat()
+  //     setInputs(inputs)
+  //   } catch (error) {
+  //     console.error(error)
+  //   }
+  // }, [source])
+
+  const handleKeyDown = useCallback((event) => {
+    if (event.key === "Backspace") {
+      setInputs(prev => prev.slice(0, -1))
       return
     }
 
-    try {
-      const inputs = source.split(/\n/).map(line => {
-        const [w, e] = line.split(/\s+/)
-        return word(w, e)
-      }).flat()
-      setInputs(inputs)
-    } catch (error) {
-      console.error(error)
-    }
-  }, [source])
+    if (!event.key.match(/^[a-z]$/)) return;
+
+    setInputs(prev => [...prev, input(event.key, prev.length % 5 as Index, Evaluation.Absent, Math.floor(prev.length / 5))].slice(0, 30))
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  })
 
   return <>
-    <div>
-      <textarea style={{width:'20rem', height:'10rem'}} value={source} onChange={e => setSource(e.target.value)}></textarea>
-      <Image src="/syntax.png" alt="syntax" width={400} height={454} />
-    </div>
-    <ul>
-      {candidates.map((word) => (
-        <li key={word}>{word}</li>
-      ))}
+    <div id="layout">
+      <header>
+        <h1>WORDLE cheating</h1>
+        <p>Don't use it if you want to enjoy <a href="https://www.powerlanguage.co.uk/wordle/" target="_blank">WORDLE</a>.</p>
+      </header>
+      <div id="board-container">
+        <div id="board">
+          <GameRow length={5} inputs={inputs.slice(0, 5)}/>
+          <GameRow length={5} inputs={inputs.slice(5, 10)}/>
+          <GameRow length={5} inputs={inputs.slice(10, 15)}/>
+          <GameRow length={5} inputs={inputs.slice(15, 20)}/>
+          <GameRow length={5} inputs={inputs.slice(20, 25)}/>
+          <GameRow length={5} inputs={inputs.slice(25, 30)}/>
+        </div>
 
-      {/* for debug */}
-      {errors && <p>{errors}</p>}
-    </ul>
+        <div id="candidates">
+          {candidates.length > 100 ? 
+             <p>There are 100+ words that can be the correct answer.</p> :
+           candidates.length > 1 ?
+             <p>There are {candidates.length} words that can be the correct answer.</p> :
+           candidates.length > 0 ?
+             <p>The correct word is</p> :
+             <p>There is no word that can be the correct answer. Let's give up and try again tomorrow.</p>
+          }
+          <ul>
+            {candidates.slice(0, 15).map((word) => (
+              <li key={word}>{word}</li>
+            ))}
+
+            {/* for debug */}
+            {errors && <p>{errors}</p>}
+          </ul>
+
+          {candidates.length > 15 && <span>...</span>}
+
+        </div>
+      </div>
+      <footer>
+        <p>Type keyboard and click letter.</p>
+      </footer>
+      <div className="github">
+        <a href="https://github.com/mktoho12/wordle-support" target="_blank"><Image src="/github.png" alt="github repository" width={60} height={60} /></a>
+      </div>
+    </div>
   </>
 }
 
@@ -121,15 +166,6 @@ export default Words
 export const getStaticProps: GetStaticProps = async () => {
   try {
     const words = readFileSync(wordListPath, 'utf8').split("\n").filter(word => word.length === 5)
-    // const browser = await chromium.launch()
-    // const select = () => Array.from(document.querySelectorAll('.word-block ul li')).map(li => li.textContent)
-    // const words = await Promise.all('abcdefghijklmnopqrstuvwxyz'.split('').map(letter => 
-    //   browser.newPage().then(page =>
-    //     page.goto(`https://www.wordmom.com/5-letter-words/that-start-with-${letter}`)
-    //         .then(() => page.evaluate(select))
-    //   )
-    // )).then(wordses => wordses.flat())
-    // browser.close()
     
     return { props: { words } }
   } catch (err: any) {
