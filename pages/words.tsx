@@ -3,13 +3,16 @@ import * as puppeteer from "puppeteer"
 
 type Props = {
   words: string[]
+  errors?: any
 }
 
-const Words = ({ words }: Props) => (
+const Words = ({ words, errors }: Props) => (
   <ul>
     {words.map((word) => (
       <li key={word}>{word}</li>
     ))}
+
+    <p>{errors}</p>
   </ul>
 )
 
