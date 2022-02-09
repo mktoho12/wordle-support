@@ -64,17 +64,6 @@ const Words = ({ words, errors }: Props) => {
     }
   }
 
-  useEffect(() => {
-    try {
-      setInputs([
-        ...word("input", "xxoox"),
-        ...word("frame", "xxox!"),
-      ])
-    } catch (error) {
-      console.error(error)
-    }
-  }, [])
-
   type Predicate = (word: string) => boolean
 
   // From entered letter to filter predicate.
