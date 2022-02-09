@@ -1,20 +1,110 @@
 import { GetStaticProps } from "next"
 import { chromium } from "playwright"
+import { useEffect, useState } from "react"
 
 type Props = {
   words: string[]
   errors?: any
 }
 
-const Words = ({ words, errors }: Props) => (
-  <ul>
-    {words.map((word) => (
-      <li key={word}>{word}</li>
-    ))}
+type Letter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' |
+              'G' | 'H' | 'I' | 'J' | 'K' | 'L' |
+              'M' | 'N' | 'O' | 'P' | 'Q' | 'R' |
+              'S' | 'T' | 'U' | 'V' | 'W' | 'X' |
+              'Y' | 'Z'
 
-    <p>{errors}</p>
-  </ul>
-)
+enum HitBlowState {
+  Hit, Blow, None
+}
+
+type Input = {
+  index: 0 | 1 | 2 | 3 | 4
+  letter: Letter
+  state: HitBlowState
+}
+
+const Words = ({ words, errors }: Props) => {
+  const [inputs, setInputs] = useState<Input[]>([])
+  const [fulfill, setFulfill] = useState<string[]>([])
+
+  useEffect(() => {
+    setInputs([
+      {
+        index: 0,
+        letter: 'I',
+        state: HitBlowState.None,
+      },
+      {
+        index: 1,
+        letter: 'N',
+        state: HitBlowState.None,
+      },
+      {
+        index: 2,
+        letter: 'P',
+        state: HitBlowState.None,
+      },
+      {
+        index: 3,
+        letter: 'U',
+        state: HitBlowState.Blow,
+      },
+      {
+        index: 4,
+        letter: 'T',
+        state: HitBlowState.None,
+      },
+      {
+        index: 0,
+        letter: 'F',
+        state: HitBlowState.None,
+      },
+      {
+        index: 1,
+        letter: 'R',
+        state: HitBlowState.Blow,
+      },
+      {
+        index: 2,
+        letter: 'A',
+        state: HitBlowState.None,
+      },
+      {
+        index: 3,
+        letter: 'M',
+        state: HitBlowState.Blow,
+      },
+      {
+        index: 4,
+        letter: 'E',
+        state: HitBlowState.None,
+      },
+    ])
+  }, [])
+
+  useEffect(() => {
+    const filtered = inputs.map(input =>
+      input.state === HitBlowState.None ? (word: string) => !word.includes(input.letter.toLowerCase()) :
+      input.state === HitBlowState.Hit ? (word: string) => word[input.index] === input.letter.toLowerCase() :
+      (word: string) => word.includes(input.letter.toLowerCase()) && word[input.index] !== input.letter.toLowerCase()
+    ).reduce((accm, fn) => accm.filter(fn), words)
+
+    setFulfill(filtered)
+  }, [inputs])
+
+  return <>
+    <div>
+    </div>
+    <ul>
+      {fulfill.map((word) => (
+        <li key={word}>{word}</li>
+      ))}
+
+      {/* for debug */}
+      {errors && <p>{errors}</p>}
+    </ul>
+  </>
+}
 
 export default Words
 
