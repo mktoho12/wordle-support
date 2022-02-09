@@ -75,10 +75,9 @@ const Words = ({ words, errors }: Props) => {
     }
   }
   
-  useEffect(
-    () => setCandidates(inputs.map(predicate).reduce((accm, p) => accm.filter(p), words)),
-    [inputs]
-  )
+  useEffect(() => {
+    setCandidates(inputs.map(predicate).reduce((accm, p) => accm.filter(p), words))
+  }, [inputs, words])
 
   // const [source, setSource] = useState("")
   // useEffect(() => {
@@ -97,7 +96,7 @@ const Words = ({ words, errors }: Props) => {
   //   }
   // }, [source])
 
-  const handleKeyDown = useCallback((event) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Backspace") {
       setInputs(prev => prev.slice(0, -1))
       return
@@ -105,8 +104,8 @@ const Words = ({ words, errors }: Props) => {
 
     if (!event.key.match(/^[a-z]$/)) return;
 
-    setInputs(prev => [...prev, input(event.key, prev.length % 5 as Index, Evaluation.Absent, Math.floor(prev.length / 5))].slice(0, 30))
-  }, []);
+    setInputs(prev => [...prev, input(event.key as Letter, prev.length % 5 as Index, Evaluation.Absent, Math.floor(prev.length / 5))].slice(0, 30))
+  }
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -117,7 +116,7 @@ const Words = ({ words, errors }: Props) => {
     <div id="layout">
       <header>
         <h1>WORDLE cheating</h1>
-        <p>Don't use it if you want to enjoy <a href="https://www.powerlanguage.co.uk/wordle/" target="_blank">WORDLE</a>.</p>
+        <p>Don&apos;t use it if you want to enjoy <a href="https://www.powerlanguage.co.uk/wordle/" target="_blank" rel="noreferrer">WORDLE</a>.</p>
       </header>
       <div id="board-container">
         <div id="board">
@@ -136,7 +135,7 @@ const Words = ({ words, errors }: Props) => {
              <p>There are {candidates.length} words that can be the correct answer.</p> :
            candidates.length > 0 ?
              <p>The correct word is</p> :
-             <p>There is no word that can be the correct answer. Let's give up and try again tomorrow.</p>
+             <p>There is no word that can be the correct answer. Let&apos;s give up and try again tomorrow.</p>
           }
           <ul>
             {candidates.slice(0, 15).map((word) => (
@@ -155,7 +154,7 @@ const Words = ({ words, errors }: Props) => {
         <p>Type keyboard and click letter.</p>
       </footer>
       <div className="github">
-        <a href="https://github.com/mktoho12/wordle-support" target="_blank"><Image src="/github.png" alt="github repository" width={60} height={60} /></a>
+        <a href="https://github.com/mktoho12/wordle-support" target="_blank" rel="noreferrer"><Image src="/github.png" alt="github repository" width={60} height={60} /></a>
       </div>
     </div>
   </>
