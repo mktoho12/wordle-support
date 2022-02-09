@@ -8,7 +8,7 @@ type Props = {
 const Words = ({ words }: Props) => (
   <ul>
     {words.map((word) => (
-      <li>{word}</li>
+      <li key={word}>{word}</li>
     ))}
   </ul>
 )
