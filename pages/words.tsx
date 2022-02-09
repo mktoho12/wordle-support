@@ -29,6 +29,6 @@ export const getStaticProps: GetStaticProps = async () => {
     
     return { props: { words } }
   } catch (err: any) {
-    return { props: { errors: err.message } }
+    return { props: { words: [], errors: err.message } }
   }
 }
