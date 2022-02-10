@@ -14,7 +14,13 @@ const useKeyboardEventHandler = (setInputs: Dispatch<SetStateAction<Input[][]>>)
 
     const input = (index: Index) => new Input(event.key as Letter, index, Evaluation.Absent)
     setInputs(prev => prev.every(inputs => inputs.length === 5) ?
-      [...prev, [input(0)]] :  [...prev.slice(0, -1), [...prev.at(-1) as Input[], input((prev.at(-1) as Input[]).length as Index)]].slice(0, 6))
+      [...prev, [input(0)]].slice(0, 6) :
+      [...prev.slice(0, -1),
+        [
+          ...prev[prev.length - 1],
+          input(prev.length % 5 as Index)
+        ]
+      ])
   }
 
   useEffect(() => {
