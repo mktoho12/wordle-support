@@ -10,17 +10,6 @@ export enum Evaluation {
   Absent = "absent",
   Present = "present",
   Correct = "correct",
-  Empty = "empty",
-}
-
-export type EvaluationLetter = 'x' | 'o' | '!'
-
-export type Input = {
-  index: Index
-  letter: Letter
-  evaluation: Evaluation
-  wordIndex: number
-  toggle?: () => void
 }
 
 export type Predicate = (word: string) => boolean
