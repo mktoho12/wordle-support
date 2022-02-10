@@ -18,7 +18,7 @@ const useKeyboardEventHandler = (setInputs: Dispatch<SetStateAction<Input[][]>>)
       [...prev.slice(0, -1),
         [
           ...prev[prev.length - 1],
-          input(prev.length % 5 as Index)
+          input(prev[prev.length - 1].length % 5 as Index)
         ]
       ])
   }
