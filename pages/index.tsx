@@ -8,6 +8,7 @@ import Image from "next/image"
 import useKeyboardEventHandler from "../hooks/KeyboardEventHandler"
 import Input from "../lib/Input"
 import { assign, zeroTo } from "../lib/arrays"
+import Head from "next/head"
 
 export type Props = {
   words: string[]
@@ -40,6 +41,20 @@ const Home = ({ words, errors }: Props) => {
   )
 
   return <>
+    <Head>
+      <title>WORDLE cheating</title>
+      <meta name="description" content="Tool for cheating in WORDLE. do not use it if you want to enjoy the game."/>
+
+      <meta property="og:title" content="WORDLE cheating"/>
+      <meta property="og:type" content="cheat tool"/>
+      <meta property="og:url" content="https://wordle.mktoho.dev/"/>
+      <meta property="og:image" content="https://wordle.mktoho.dev/og.png"/>
+
+      <link rel="icon" href="/favicon.ico" sizes="any"/>
+      <link rel="icon shortcut" href="/favicon-32x32.png" sizes="3232"/>
+      <link rel="apple-touch-icon" href="/favicon-192x192.png"/>
+    </Head>
+
     <div id="layout">
       <header>
         <h1>WORDLE cheating</h1>
